@@ -35,7 +35,7 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/", handler) // each request calls handler
+	http.HandleFunc("/signup", handler) // each request calls handler
 	log.Fatal(http.ListenAndServe("0.0.0.0:80", nil))
 }
 
