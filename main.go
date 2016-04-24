@@ -35,12 +35,60 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/signup", handler) // each request calls handler
+	http.HandleFunc("/signup", signupHandler) // each request calls handler
+	http.HandleFunc("/login", loginHandler)   // each request calls handler
 	log.Fatal(http.ListenAndServe("0.0.0.0:80", nil))
 }
 
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		decoder := json.NewDecoder(r.Body)
+		var u user
+		err := decoder.Decode(&u)
+		if err != nil {
+			log.Fatalln(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, err.Error())
+		} else {
+			res, err := db.Table("user").Get(u.Email).Run(session)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, err.Error())
+				return
+			}
+			defer res.Close()
+
+			if res.IsNil() {
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprintf(w, "User not found")
+				return
+			}
+
+			var myuser map[string]interface{}
+			err = res.One(&myuser)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, err.Error())
+				return
+			}
+			token, err := MakeToken()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprintf(w, err.Error())
+			} else {
+				w.Header().Add("Authorization", token)
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintf(w, "%s Logged in!", myuser["email"])
+			}
+		}
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "no such method")
+	}
+}
+
 // handler echoes the Path component of the request URL r.
-func handler(w http.ResponseWriter, r *http.Request) {
+func signupHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		decoder := json.NewDecoder(r.Body)
 		var u user
