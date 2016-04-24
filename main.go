@@ -118,6 +118,6 @@ func makeToken() (tokenString string, err error) {
 	token.Claims["role"] = "user"
 	token.Claims["exp"] = time.Now().Add(time.Second * 30).Unix()
 	// Sign and get the complete encoded token as a string
-	tokenString, err = token.SignedString(os.Getenv("JWT_SECRET"))
+	tokenString, err = token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	return
 }
