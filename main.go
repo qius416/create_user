@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
 
 	db "gopkg.in/dancannon/gorethink.v2"
 )
@@ -71,7 +75,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(w, err.Error())
 				return
 			}
-			token, err := MakeToken()
+			token, err := makeToken()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprintf(w, err.Error())
@@ -105,4 +109,15 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "no such method")
 	}
+}
+
+func makeToken() (tokenString string, err error) {
+	// Create the token
+	token := jwt.New(jwt.SigningMethodHS256)
+	// Set some claims
+	token.Claims["role"] = "user"
+	token.Claims["exp"] = time.Now().Add(time.Second * 30).Unix()
+	// Sign and get the complete encoded token as a string
+	tokenString, err = token.SignedString(os.Getenv("JWT_SECRET"))
+	return
 }
