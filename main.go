@@ -18,6 +18,10 @@ type user struct {
 	Password string `json:"password" gorethink:"password"`
 }
 
+type auth struct {
+	Token string `json:"token"`
+}
+
 var session *db.Session
 
 func init() {
@@ -28,7 +32,7 @@ func init() {
 		DiscoverHosts: true,
 	})
 	// session, err = db.Connect(db.ConnectOpts{
-	// 	Address:  "localhost:28015",
+	// 	Address:  "192.168.99.100:28015",
 	// 	Database: "bourbaki",
 	// 	MaxIdle:  10,
 	// 	MaxOpen:  10,
@@ -42,6 +46,7 @@ func main() {
 	http.HandleFunc("/signup", signupHandler) // each request calls handler
 	http.HandleFunc("/login", loginHandler)   // each request calls handler
 	log.Fatal(http.ListenAndServe("0.0.0.0:80", nil))
+	//log.Fatal(http.ListenAndServe("0.0.0.0:7000", nil))
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,9 +85,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				fmt.Fprintf(w, err.Error())
 			} else {
-				w.Header().Add("Authorization", token)
+				p := auth{Token: token}
 				w.WriteHeader(http.StatusOK)
-				fmt.Fprintf(w, "%s Logged in!", myuser["email"])
+				json.NewEncoder(w).Encode(p)
 			}
 		}
 	} else {
